@@ -2,9 +2,11 @@
 
 namespace KwtSMS\Laravel;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use KwtSMS\Laravel\Channels\KwtSmsChannel;
+use KwtSMS\Laravel\Console\Commands\KwtSmsSyncCommand;
 use KwtSMS\Laravel\Services\BalanceService;
 use KwtSMS\Laravel\Services\PhoneNormalizer;
 use KwtSMS\Laravel\Services\SmsSender;
@@ -28,11 +30,17 @@ class KwtSmsServiceProvider extends ServiceProvider
         $this->app->singleton(KwtSmsChannel::class, fn (Application $app) => new KwtSmsChannel(
             $app->make(SmsSender::class),
         ));
+
+        $this->app->singleton(KwtSmsSyncCommand::class, fn (Application $app) => new KwtSmsSyncCommand(
+            $app->make(BalanceService::class),
+        ));
     }
 
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
+            $this->commands([KwtSmsSyncCommand::class]);
+
             $this->publishes([
                 __DIR__.'/../config/kwtsms.php' => config_path('kwtsms.php'),
             ], 'kwtsms-config');
@@ -62,5 +70,9 @@ class KwtSmsServiceProvider extends ServiceProvider
         if (file_exists(__DIR__.'/../routes/web.php')) {
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         }
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('kwtsms:sync')->dailyAt('03:00');
+        });
     }
 }

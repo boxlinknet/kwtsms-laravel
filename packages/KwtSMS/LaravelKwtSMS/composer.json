@@ -24,7 +24,8 @@
     },
     "autoload": {
         "psr-4": {
-            "KwtSMS\\Laravel\\": "src/"
+            "KwtSMS\\Laravel\\": "src/",
+            "KwtSMS\\Laravel\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
