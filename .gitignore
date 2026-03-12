@@ -40,3 +40,8 @@ docker/
 /tests/
 *.zip
 auth.json
+/bootstrap/cache/
+/database/*.sqlite
+/database/*.sqlite-wal
+/database/*.sqlite-shm
+/app/Notifications/
