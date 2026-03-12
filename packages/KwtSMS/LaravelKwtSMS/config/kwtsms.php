@@ -42,6 +42,7 @@ return [
     |--------------------------------------------------------------------------
     | API Base URL
     |--------------------------------------------------------------------------
+    | The kwtSMS REST/JSON API base URL. Must end with a trailing slash.
     */
     'api_base_url' => env('KWTSMS_API_URL', 'https://www.kwtsms.com/API/'),
 
@@ -58,6 +59,15 @@ return [
     |--------------------------------------------------------------------------
     */
     'admin_route_prefix' => env('KWTSMS_ADMIN_PREFIX', 'kwtsms'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Panel Middleware
+    |--------------------------------------------------------------------------
+    | Middleware applied to all admin panel routes. If your application uses
+    | a custom auth guard (e.g. 'auth:admin'), update 'auth' to match.
+    | Default: ['web', 'auth'] uses the default web guard.
+    */
     'admin_middleware' => ['web', 'auth'],
 
     /*

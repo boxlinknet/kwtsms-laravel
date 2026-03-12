@@ -1,7 +1,6 @@
 {
     "name": "kwtsms/laravel-kwtsms",
     "description": "Laravel notification channel for the kwtSMS SMS gateway (Kuwait)",
-    "version": "1.0.0",
     "type": "library",
     "keywords": ["kwtsms", "sms", "laravel", "notification", "kuwait", "otp"],
     "homepage": "https://www.kwtsms.com",
@@ -21,7 +20,7 @@
     },
     "require-dev": {
         "orchestra/testbench": "^8.0|^9.0|^10.0",
-        "phpunit/phpunit": "^10.0|^11.0"
+        "phpunit/phpunit": "^10.5|^11.0"
     },
     "autoload": {
         "psr-4": {

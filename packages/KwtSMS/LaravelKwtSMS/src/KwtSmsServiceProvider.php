@@ -32,11 +32,16 @@ class KwtSmsServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/lang' => lang_path('vendor/kwtsms'),
             ], 'kwtsms-lang');
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
 
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'kwtsms');
-        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'kwtsms');
+        if (is_dir(__DIR__.'/../resources/views')) {
+            $this->loadViewsFrom(__DIR__.'/../resources/views', 'kwtsms');
+        }
+
+        if (is_dir(__DIR__.'/../resources/lang')) {
+            $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'kwtsms');
+        }
 
         if (file_exists(__DIR__.'/../routes/web.php')) {
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
