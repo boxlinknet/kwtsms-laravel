@@ -46,14 +46,14 @@ class KwtSmsSyncCommand extends Command
 
         $this->line('Syncing kwtSMS account data...');
 
-        // 1. Sync balance
-        $balance = $client->balance();
-        if ($balance === null) {
-            $this->error('Failed to retrieve balance from kwtSMS API. Check credentials.');
+        // 1. Sync balance via BalanceService (reads 'available' field correctly)
+        $balanceResult = $this->balanceService->syncFromApi();
+        if (isset($balanceResult['error'])) {
+            $this->error('Failed to retrieve balance: '.$balanceResult['error']);
 
             return self::FAILURE;
         }
-        $this->balanceService->updateCache($balance);
+        $balance = $balanceResult['available'];
         $this->line("Balance: {$balance} credits");
 
         // 2. Sync sender IDs

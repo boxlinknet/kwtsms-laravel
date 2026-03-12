@@ -2,7 +2,6 @@
 
 namespace KwtSMS\Laravel\Services;
 
-use KwtSMS\KwtSMS;
 use KwtSMS\Laravel\Models\KwtSmsSetting;
 
 /**
@@ -50,35 +49,66 @@ class BalanceService
     /**
      * Sync balance from the kwtSMS API and update the cache.
      *
-     * Returns array with 'available' key on success, or 'error' key on failure.
+     * Calls /API/balance/ directly. The kwtsms/kwtsms library balance() method
+     * reads the wrong field ('balance' instead of 'available'), so we call
+     * the API ourselves to get the correct value.
      *
-     * @return array{available?: float, error?: string}
+     * @return array{available?: float, purchased?: float, error?: string}
      */
     public function syncFromApi(): array
     {
-        $client = $this->makeClient();
-        $balance = $client->balance();
+        $response = $this->fetchBalanceFromApi();
 
-        if ($balance === null) {
-            return ['error' => 'Failed to retrieve balance from API'];
+        if (! isset($response['result']) || $response['result'] !== 'OK') {
+            return ['error' => $response['description'] ?? 'Failed to retrieve balance from API'];
         }
 
-        $this->updateCache($balance);
+        $available = (float) ($response['available'] ?? 0);
+        $purchased = (float) ($response['purchased'] ?? 0);
 
-        return ['available' => $balance];
+        $this->updateCache($available);
+
+        return ['available' => $available, 'purchased' => $purchased];
     }
 
     /**
-     * Create a configured KwtSMS client instance.
+     * Fetch balance from the kwtSMS /API/balance/ endpoint.
+     *
+     * @return array<string, mixed>
      */
-    private function makeClient(): KwtSMS
+    private function fetchBalanceFromApi(): array
     {
-        return new KwtSMS(
-            username: config('kwtsms.username', ''),
-            password: config('kwtsms.password', ''),
-            sender_id: config('kwtsms.sender', 'KWT-SMS'),
-            test_mode: (bool) config('kwtsms.test_mode', false),
-            log_file: '',
-        );
+        $url = rtrim((string) config('kwtsms.api_base_url', 'https://www.kwtsms.com/API/'), '/').'/balance/';
+        $payload = json_encode([
+            'username' => config('kwtsms.username', ''),
+            'password' => config('kwtsms.password', ''),
+        ]);
+
+        if ($payload === false) {
+            return ['result' => 'ERROR', 'description' => 'Failed to encode request'];
+        }
+
+        $ch = curl_init($url);
+        if ($ch === false) {
+            return ['result' => 'ERROR', 'description' => 'Failed to initialize HTTP request'];
+        }
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, (int) config('kwtsms.timeout', 30));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Accept: application/json']);
+
+        $body = curl_exec($ch);
+        curl_close($ch);
+
+        if ($body === false || $body === '') {
+            return ['result' => 'ERROR', 'description' => 'Empty response from balance API'];
+        }
+
+        $decoded = json_decode((string) $body, true);
+
+        return is_array($decoded) ? $decoded : ['result' => 'ERROR', 'description' => 'Invalid JSON from balance API'];
     }
 }
