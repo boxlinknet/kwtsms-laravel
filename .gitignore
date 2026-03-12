@@ -1,10 +1,54 @@
-*.log
-.DS_Store
+# Package dependencies
+/vendor/
+
+# Laravel dev environment (local only, not part of the distributed package)
+/app/
+/artisan
+/bootstrap/
+/database/.gitignore
+/database/factories/
+/database/migrations/0001_01_01_000000_create_users_table.php
+/database/migrations/0001_01_01_000001_create_cache_table.php
+/database/migrations/0001_01_01_000002_create_jobs_table.php
+/database/seeders/DatabaseSeeder.php
+/config/app.php
+/config/auth.php
+/config/cache.php
+/config/database.php
+/config/filesystems.php
+/config/logging.php
+/config/mail.php
+/config/queue.php
+/config/services.php
+/config/session.php
+/packages/
+/public/
+/resources/css/
+/resources/js/
+/resources/views/welcome.blade.php
+/routes/console.php
+/storage/
+/vite.config.js
+/package.json
+/package-lock.json
+/node_modules/
+/composer.lock
+
+# Databases
+/database/*.sqlite
+/database/*.sqlite-wal
+/database/*.sqlite-shm
+
+# Environment files
 .env
 .env.backup
 .env.production
+.env.example
+
+# OS / Editor
+.DS_Store
+Thumbs.db
 .phpactor.json
-.phpunit.result.cache
 /.fleet
 /.idea
 /.nova
@@ -12,18 +56,20 @@
 /.vscode
 /.zed
 /auth.json
-/node_modules
+Homestead.json
+Homestead.yaml
+
+# CI / Build
 /public/build
 /public/hot
 /public/storage
 /storage/*.key
 /storage/pail
-/vendor
-Homestead.json
-Homestead.yaml
-Thumbs.db
+.phpunit.result.cache
+*.log
+*.zip
 
-# User global rules
+# AI / Dev tools (local only)
 .claude/
 CLAUDE.md
 AGENTS.md
@@ -37,11 +83,3 @@ docs/
 .vscode/
 .worktrees/
 docker/
-/tests/
-*.zip
-auth.json
-/bootstrap/cache/
-/database/*.sqlite
-/database/*.sqlite-wal
-/database/*.sqlite-shm
-/app/Notifications/
