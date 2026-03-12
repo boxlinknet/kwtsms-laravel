@@ -26,6 +26,12 @@ Thumbs.db
 # User global rules
 .claude/
 CLAUDE.md
+AGENTS.md
+GEMINI.md
+.gemini/
+.mcp.json
+opencode.json
+boost.json
 docs/
 .idea/
 .vscode/
