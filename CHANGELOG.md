@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-03-13
+
+### Added
+
+- GitHub Actions CI: Laravel Pint code style check (`pint.yml`) on push/PR to main
+- GitHub Actions CI: PHP syntax check across 8.1, 8.2, 8.3 (`php.yml`) on push/PR to main
+
+### Changed
+
+- Added `laravel/pint` to `require-dev` in `composer.json`
+
+---
+
 ## [1.0.0] - 2026-03-13
 
 ### Added
