@@ -37,6 +37,6 @@ docs/
 .vscode/
 .worktrees/
 docker/
-tests/
+/tests/
 *.zip
 auth.json

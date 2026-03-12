@@ -54,6 +54,8 @@ class KwtSmsTemplate extends Model
     /**
      * Replace template placeholders with actual values.
      *
+     * Supports both {{key}} and {{ key }} syntax.
+     *
      * @param  array<string, string>  $data
      */
     public function render(array $data = []): string
@@ -61,7 +63,8 @@ class KwtSmsTemplate extends Model
         $body = $this->body;
 
         foreach ($data as $key => $value) {
-            $body = str_replace('{'.$key.'}', (string) $value, $body);
+            $body = str_replace('{{'.$key.'}}', (string) $value, $body);
+            $body = str_replace('{{ '.$key.' }}', (string) $value, $body);
         }
 
         return $body;

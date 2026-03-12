@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>kwtSMS Admin@hasSection('title') - @yield('title')@endif</title>
+    <title>kwtSMS Admin @hasSection('title') - @yield('title') @endif</title>
     <style>
         :root {
             --kwt-orange: #FFA200;
@@ -679,6 +679,7 @@
             margin-bottom: 0;
         }
     </style>
+    <script>window.kwtSmsConfig = { connectUrl: '{{ route("kwtsms.settings.connect") }}' };</script>
 </head>
 <body>
 
@@ -801,12 +802,16 @@
             if (!textarea || !counter) { return; }
 
             function update() {
-                var len = textarea.value.length;
-                var smsCount = Math.ceil(len / 160) || 1;
-                counter.textContent = len + ' chars / ' + smsCount + ' SMS';
+                var text = textarea.value;
+                var len = text.length;
+                var hasArabic = /[\u0600-\u06FF]/.test(text);
+                var pageSize = hasArabic ? 70 : 160;
+                var pageLabel = hasArabic ? 'AR' : 'EN';
+                var smsCount = len === 0 ? 1 : Math.ceil(len / pageSize);
+                counter.textContent = len + ' chars / ' + smsCount + ' SMS (' + pageLabel + ', ' + pageSize + '/page)';
                 counter.className = 'kwt-char-counter';
-                if (len > 320) { counter.className += ' danger'; }
-                else if (len > 160) { counter.className += ' warning'; }
+                if (len > pageSize * 2) { counter.className += ' danger'; }
+                else if (len > pageSize) { counter.className += ' warning'; }
             }
 
             textarea.addEventListener('input', update);

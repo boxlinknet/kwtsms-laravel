@@ -1,5 +1,678 @@
 /*
  * kwtSMS Admin Panel CSS
- * This file is optional - styles are inlined in layout.blade.php for zero-dependency operation.
  * Publish with: php artisan vendor:publish --tag=kwtsms-assets
+ * Styles are also inlined in layout.blade.php for zero-dependency operation.
  */
+
+:root {
+    --kwt-orange: #FFA200;
+    --kwt-blue: #79CCF2;
+    --kwt-text: #434345;
+    --kwt-bg: #FFFFFF;
+    --kwt-border: #E5E7EB;
+    --kwt-muted: #6B7280;
+    --kwt-light: #F9FAFB;
+    --kwt-success: #10B981;
+    --kwt-error: #EF4444;
+    --kwt-warning: #F59E0B;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #F3F4F6;
+    color: var(--kwt-text);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+a {
+    color: var(--kwt-orange);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Top bar */
+.kwt-topbar {
+    background: var(--kwt-bg);
+    border-bottom: 3px solid var(--kwt-orange);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.kwt-logo {
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--kwt-orange);
+    letter-spacing: -0.5px;
+    margin-right: 8px;
+}
+
+.kwt-logo span {
+    color: var(--kwt-blue);
+}
+
+.kwt-topbar-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.kwt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.kwt-badge-green {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.kwt-badge-red {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.kwt-badge-yellow {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.kwt-badge-blue {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.kwt-badge-orange {
+    background: #FFF7ED;
+    color: #C2410C;
+}
+
+/* Layout */
+.kwt-wrapper {
+    display: flex;
+    min-height: calc(100vh - 56px);
+}
+
+/* Sidebar */
+.kwt-sidebar {
+    width: 220px;
+    background: var(--kwt-bg);
+    border-right: 1px solid var(--kwt-border);
+    padding: 20px 0;
+    flex-shrink: 0;
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+}
+
+.kwt-nav {
+    list-style: none;
+}
+
+.kwt-nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    color: var(--kwt-text);
+    font-size: 14px;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+}
+
+[dir="rtl"] .kwt-nav-item a {
+    border-left: none;
+    border-right: 3px solid transparent;
+}
+
+.kwt-nav-item a:hover {
+    background: var(--kwt-light);
+    color: var(--kwt-orange);
+    text-decoration: none;
+}
+
+.kwt-nav-item a.active {
+    background: #FFF7ED;
+    color: var(--kwt-orange);
+    border-left-color: var(--kwt-orange);
+    font-weight: 600;
+}
+
+[dir="rtl"] .kwt-nav-item a.active {
+    border-left-color: transparent;
+    border-right-color: var(--kwt-orange);
+}
+
+.kwt-nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* Main content */
+.kwt-main {
+    flex: 1;
+    padding: 28px;
+    max-width: 1100px;
+}
+
+.kwt-page-title {
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--kwt-text);
+    margin-bottom: 20px;
+}
+
+/* Cards */
+.kwt-card {
+    background: var(--kwt-bg);
+    border: 1px solid var(--kwt-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.kwt-card-title {
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--kwt-text);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--kwt-border);
+}
+
+/* Grid */
+.kwt-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.kwt-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .kwt-grid-3,
+    .kwt-grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .kwt-sidebar {
+        display: none;
+    }
+}
+
+/* Stat cards */
+.kwt-stat-card {
+    background: var(--kwt-bg);
+    border: 1px solid var(--kwt-border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    text-align: center;
+}
+
+.kwt-stat-value {
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--kwt-orange);
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.kwt-stat-label {
+    font-size: 12px;
+    color: var(--kwt-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Flash messages */
+.kwt-flash {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.kwt-flash-success {
+    background: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #6EE7B7;
+}
+
+.kwt-flash-error {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FCA5A5;
+}
+
+/* Forms */
+.kwt-form-group {
+    margin-bottom: 16px;
+}
+
+.kwt-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--kwt-text);
+    margin-bottom: 6px;
+}
+
+.kwt-input,
+.kwt-select,
+.kwt-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--kwt-border);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--kwt-text);
+    background: var(--kwt-bg);
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+}
+
+.kwt-input:focus,
+.kwt-select:focus,
+.kwt-textarea:focus {
+    border-color: var(--kwt-orange);
+    box-shadow: 0 0 0 3px rgba(255, 162, 0, 0.1);
+}
+
+.kwt-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.kwt-help-text {
+    font-size: 12px;
+    color: var(--kwt-muted);
+    margin-top: 4px;
+}
+
+.kwt-error-text {
+    font-size: 12px;
+    color: var(--kwt-error);
+    margin-top: 4px;
+}
+
+/* Buttons */
+.kwt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: inherit;
+    text-decoration: none;
+}
+
+.kwt-btn:hover {
+    text-decoration: none;
+}
+
+.kwt-btn-primary {
+    background: var(--kwt-orange);
+    color: #fff;
+}
+
+.kwt-btn-primary:hover {
+    background: #E69100;
+    color: #fff;
+}
+
+.kwt-btn-secondary {
+    background: var(--kwt-light);
+    color: var(--kwt-text);
+    border: 1px solid var(--kwt-border);
+}
+
+.kwt-btn-secondary:hover {
+    background: #E5E7EB;
+}
+
+.kwt-btn-danger {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FCA5A5;
+}
+
+.kwt-btn-danger:hover {
+    background: #FCA5A5;
+    color: #7F1D1D;
+}
+
+.kwt-btn-blue {
+    background: var(--kwt-blue);
+    color: #fff;
+}
+
+.kwt-btn-blue:hover {
+    background: #5BB8E0;
+    color: #fff;
+}
+
+.kwt-btn-sm {
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
+/* Tables */
+.kwt-table-wrap {
+    overflow-x: auto;
+}
+
+.kwt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.kwt-table th {
+    background: var(--kwt-light);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--kwt-muted);
+    border-bottom: 1px solid var(--kwt-border);
+    white-space: nowrap;
+}
+
+[dir="rtl"] .kwt-table th {
+    text-align: right;
+}
+
+.kwt-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--kwt-border);
+    vertical-align: middle;
+}
+
+.kwt-table tr:last-child td {
+    border-bottom: none;
+}
+
+.kwt-table tr:hover td {
+    background: var(--kwt-light);
+}
+
+/* Status badges */
+.kwt-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.kwt-status-sent {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.kwt-status-failed {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.kwt-status-pending {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.kwt-status-test {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+/* Toggle switch */
+.kwt-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--kwt-border);
+}
+
+.kwt-toggle-wrap:last-child {
+    border-bottom: none;
+}
+
+.kwt-toggle-info {
+    flex: 1;
+}
+
+.kwt-toggle-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--kwt-text);
+}
+
+.kwt-toggle-desc {
+    font-size: 12px;
+    color: var(--kwt-muted);
+    margin-top: 2px;
+}
+
+.kwt-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.kwt-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.kwt-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #D1D5DB;
+    border-radius: 24px;
+    transition: 0.2s;
+}
+
+.kwt-toggle-slider:before {
+    position: absolute;
+    content: '';
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+
+.kwt-toggle input:checked + .kwt-toggle-slider {
+    background: var(--kwt-orange);
+}
+
+.kwt-toggle input:checked + .kwt-toggle-slider:before {
+    transform: translateX(20px);
+}
+
+/* Actions row */
+.kwt-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.kwt-actions-right {
+    margin-left: auto;
+}
+
+/* Pagination */
+.kwt-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 16px;
+}
+
+.kwt-pagination a,
+.kwt-pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    border: 1px solid var(--kwt-border);
+    color: var(--kwt-text);
+    background: var(--kwt-bg);
+}
+
+.kwt-pagination a:hover {
+    background: var(--kwt-light);
+    text-decoration: none;
+}
+
+.kwt-pagination span.current {
+    background: var(--kwt-orange);
+    color: #fff;
+    border-color: var(--kwt-orange);
+    font-weight: 600;
+}
+
+/* Code/pre */
+.kwt-code {
+    background: #1F2937;
+    color: #E5E7EB;
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    line-height: 1.6;
+}
+
+/* Footer */
+.kwt-footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 12px;
+    color: var(--kwt-muted);
+    border-top: 1px solid var(--kwt-border);
+    margin-top: 40px;
+}
+
+/* Detail row */
+.kwt-detail-row {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--kwt-border);
+    font-size: 13px;
+}
+
+.kwt-detail-row:last-child {
+    border-bottom: none;
+}
+
+.kwt-detail-key {
+    font-weight: 600;
+    color: var(--kwt-muted);
+    min-width: 160px;
+    flex-shrink: 0;
+}
+
+.kwt-detail-value {
+    color: var(--kwt-text);
+    word-break: break-all;
+}
+
+/* Empty state */
+.kwt-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--kwt-muted);
+}
+
+.kwt-empty-icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+}
+
+/* Char counter */
+.kwt-char-counter {
+    font-size: 12px;
+    color: var(--kwt-muted);
+    text-align: right;
+    margin-top: 4px;
+}
+
+.kwt-char-counter.warning {
+    color: var(--kwt-warning);
+}
+
+.kwt-char-counter.danger {
+    color: var(--kwt-error);
+}
+
+/* Inline form row */
+.kwt-form-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.kwt-form-row .kwt-form-group {
+    flex: 1;
+    margin-bottom: 0;
+}

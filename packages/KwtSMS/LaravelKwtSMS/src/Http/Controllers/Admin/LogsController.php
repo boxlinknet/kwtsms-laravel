@@ -33,7 +33,7 @@ class LogsController extends Controller
 
     public function export(): Response
     {
-        $logs = KwtSmsLog::query()->orderByDesc('created_at')->get();
+        $logs = KwtSmsLog::query()->orderByDesc('created_at')->limit(10000)->get();
 
         $csv = "ID,Recipient,Sender,Message,Status,Event Type,Is Test,Points Charged,Balance After,Error Code,Sent At,Created At\n";
         foreach ($logs as $log) {

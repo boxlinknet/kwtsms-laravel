@@ -3,9 +3,9 @@
 namespace KwtSMS\Laravel\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
+use KwtSMS\Laravel\Http\Requests\Admin\AlertsUpdateRequest;
 use KwtSMS\Laravel\Models\KwtSmsSetting;
 
 class AlertsController extends Controller
@@ -18,9 +18,9 @@ class AlertsController extends Controller
         return view('kwtsms::admin.alerts', compact('alerts', 'adminPhone'));
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(AlertsUpdateRequest $request): RedirectResponse
     {
-        KwtSmsSetting::set('admin_alerts', $request->input('alerts', []));
+        KwtSmsSetting::set('admin_alerts', $request->validated()['alerts'] ?? []);
 
         return redirect()->route('kwtsms.alerts')->with('success', __('kwtsms::kwtsms.alerts_saved'));
     }

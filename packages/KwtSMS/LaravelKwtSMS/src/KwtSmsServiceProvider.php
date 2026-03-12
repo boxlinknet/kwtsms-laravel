@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use KwtSMS\Laravel\Channels\KwtSmsChannel;
 use KwtSMS\Laravel\Console\Commands\KwtSmsSyncCommand;
+use KwtSMS\Laravel\Listeners\KwtSmsEventSubscriber;
 use KwtSMS\Laravel\Services\BalanceService;
 use KwtSMS\Laravel\Services\PhoneNormalizer;
 use KwtSMS\Laravel\Services\SmsSender;
@@ -79,5 +80,7 @@ class KwtSmsServiceProvider extends ServiceProvider
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('kwtsms:sync')->dailyAt('03:00');
         });
+
+        $this->app['events']->subscribe(KwtSmsEventSubscriber::class);
     }
 }
