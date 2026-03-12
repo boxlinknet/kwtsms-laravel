@@ -105,6 +105,11 @@ class SmsSender
             }
         }
 
+        // Guard against empty recipient list (e.g. caller passed an empty array)
+        if (empty($recipientList)) {
+            return ['success' => false, 'reason' => 'no_valid_recipients'];
+        }
+
         // 5. Send via official library (handles normalization, cleaning, batching internally)
         $effectiveSender = $sender ?? config('kwtsms.sender', 'KWT-SMS');
         $response = $this->client->send($recipientList, $message, $effectiveSender);
