@@ -27,4 +27,4 @@ jobs:
           coverage: none
 
       - name: Check PHP syntax
-        run: find src/ database/ config/ routes/ -name "*.php" | xargs php -l -n | grep -v "^No syntax errors"
+        run: find src/ database/ config/ routes/ -name "*.php" | xargs php -l -n
