@@ -56,6 +56,11 @@ class KwtSmsServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/lang' => lang_path('vendor/kwtsms'),
             ], 'kwtsms-lang');
+
+            $this->publishes([
+                __DIR__.'/../resources/assets' => public_path('vendor/kwtsms'),
+            ], 'kwtsms-assets');
+
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
 
