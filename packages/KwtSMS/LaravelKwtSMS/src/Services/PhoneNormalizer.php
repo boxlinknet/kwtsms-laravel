@@ -82,12 +82,20 @@ class PhoneNormalizer
     /**
      * Check if a normalized phone number starts with any of the given prefixes.
      *
+     * Empty-string prefixes are skipped to prevent every number matching.
+     *
      * @param  string[]  $coverage
      */
     private function matchesCoverage(string $normalizedPhone, array $coverage): bool
     {
         foreach ($coverage as $prefix) {
-            if (str_starts_with($normalizedPhone, (string) $prefix)) {
+            $prefix = (string) $prefix;
+
+            if ($prefix === '') {
+                continue;
+            }
+
+            if (str_starts_with($normalizedPhone, $prefix)) {
                 return true;
             }
         }
