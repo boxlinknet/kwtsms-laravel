@@ -3,6 +3,8 @@
 namespace KwtSMS\Laravel;
 
 use Illuminate\Support\ServiceProvider;
+use KwtSMS\Laravel\Services\BalanceService;
+use KwtSMS\Laravel\Services\PhoneNormalizer;
 
 class KwtSmsServiceProvider extends ServiceProvider
 {
@@ -12,6 +14,9 @@ class KwtSmsServiceProvider extends ServiceProvider
             __DIR__.'/../config/kwtsms.php',
             'kwtsms'
         );
+
+        $this->app->singleton(PhoneNormalizer::class, fn () => new PhoneNormalizer);
+        $this->app->singleton(BalanceService::class, fn () => new BalanceService);
     }
 
     public function boot(): void
