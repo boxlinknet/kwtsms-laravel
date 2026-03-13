@@ -11,7 +11,7 @@ A Laravel notification channel package for the [kwtSMS](https://www.kwtsms.com) 
 
 ## About kwtSMS
 
-[kwtSMS](https://www.kwtsms.com) is a Kuwait-based SMS gateway trusted by businesses to deliver messages across Kuwait (Zain, Ooredoo, STC, Virgin) and internationally. It offers private Sender IDs, free API testing, non-expiring credits, and competitive flat-rate pricing. Open a free account in under one minute at [kwtsms.com](https://www.kwtsms.com/signup/) — no paperwork or payment required.
+[kwtSMS](https://www.kwtsms.com) is a Kuwait-based SMS gateway trusted by businesses to deliver messages across Kuwait (Zain, Ooredoo, STC, Virgin) and internationally. It offers private Sender IDs, free API testing, non-expiring credits, and competitive flat-rate pricing. Open a free account in under one minute at [kwtsms.com](https://www.kwtsms.com/signup/), no paperwork or payment required.
 
 ---
 
