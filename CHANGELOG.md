@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-03-13
+
+### Fixed
+
+- **LOW:** Template create/edit form help text used single-brace `{variable_name}` syntax (which the template engine does not support). Corrected to `{{variable_name}}` (double braces) in both the placeholder text and help line.
+- **LOW:** `help.blade.php` Template Variables card showed single-brace `{variable_name}` syntax. Corrected to `{{variable_name}}` to match the actual template engine.
+- **LOW:** Settings page Rate Limiting description incorrectly stated per-IP limit applies to all web requests. Corrected to clarify both per-IP and per-phone limits apply to single-recipient sends only.
+
 ## [1.0.5] - 2026-03-13
 
 ### Fixed

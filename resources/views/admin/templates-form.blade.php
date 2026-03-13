@@ -76,10 +76,10 @@
                 class="kwt-textarea"
                 rows="5"
                 required
-                placeholder="e.g. Your order {order_number} has been placed."
+                placeholder="e.g. Your order @{{order_number}} has been placed."
             >{{ old('body', $template?->body) }}</textarea>
             <div id="body-counter" class="kwt-char-counter">0 chars / 1 SMS</div>
-            <div class="kwt-help-text">Use <code>{variable_name}</code> for placeholders. e.g. {order_number}, {name}, {code}</div>
+            <div class="kwt-help-text">Use <code>@{{variable_name}}</code> for placeholders. e.g. @{{order_number}}, @{{name}}, @{{code}}</div>
             @error('body')
                 <div class="kwt-error-text">{{ $message }}</div>
             @enderror

@@ -150,7 +150,7 @@
     <div class="kwt-card">
         <div class="kwt-card-title">Rate Limiting</div>
         <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">
-            Limits apply per hour. Per-phone applies to single-recipient sends (OTP, password reset). Per-IP applies to all sends from a web request.
+            Limits apply per hour. Per-phone and per-IP limits both apply to single-recipient sends only (OTP, password reset). Bulk sends are not rate limited.
         </p>
 
         <div class="kwt-form-group">
