@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-03-13
+
+### Changed
+
+- Restructured README: moved About kwtSMS section to top, License to bottom
+- Replaced Help and Support table with linked list matching style of other kwtSMS packages
+- Removed Security section, WhatsApp number, and email address from README (refer to SECURITY.md)
+- Removed kwtSMS SDKs and Integrations section from README
+- Fixed em dash in About kwtSMS paragraph
+
 ## [1.0.1] - 2026-03-13
 
 ### Added
