@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-03-13
+
+### Fixed
+
+- Rate limiting config keys (`per_phone_per_hour`, `per_ip_per_hour`) were defined in config but never enforced. Now applied in `SmsSender::send()` using Laravel's built-in `RateLimiter`. Per-phone limit applies to single-recipient sends (OTP/password reset). Per-IP limit applies in HTTP context only (skipped in CLI/queues).
+
 ## [1.0.2] - 2026-03-13
 
 ### Changed

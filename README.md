@@ -140,8 +140,9 @@ Response format:
 ['success' => false, 'reason' => 'ERR003', 'error_description' => 'Authentication error...']
 
 // Blocked by guards
-['success' => false, 'reason' => 'disabled']      // KWTSMS_ENABLED=false
-['success' => false, 'reason' => 'no_balance']     // cached balance is zero
+['success' => false, 'reason' => 'disabled']             // KWTSMS_ENABLED=false
+['success' => false, 'reason' => 'rate_limited']         // per-IP or per-phone limit exceeded
+['success' => false, 'reason' => 'no_balance']           // cached balance is zero
 ['success' => false, 'reason' => 'no_valid_recipients']  // empty list or all out of coverage
 ```
 

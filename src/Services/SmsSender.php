@@ -4,6 +4,7 @@ namespace KwtSMS\Laravel\Services;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use KwtSMS\KwtSMS;
 use KwtSMS\Laravel\Models\KwtSmsLog;
 use KwtSMS\Laravel\Models\KwtSmsSetting;
@@ -48,6 +49,7 @@ class SmsSender
      * @param  string|null  $sender  Override sender ID. Defaults to config kwtsms.sender.
      * @param  array<string, mixed>  $options  Optional metadata. Keys: 'event_type' (string).
      * @return array{success: bool, reason?: string, message_id?: string, numbers_sent?: int, points_charged?: float, balance_after?: float}
+     *                                                                                                                                       reason values on failure: 'disabled', 'rate_limited', 'not_configured', 'no_balance', 'no_valid_recipients', 'api_error', or an ERR code
      */
     public function send(string|array $recipients, string $message, ?string $sender = null, array $options = []): array
     {
@@ -60,14 +62,20 @@ class SmsSender
             return ['success' => false, 'reason' => 'disabled'];
         }
 
-        // 2. Credentials configured check
+        // 2. Rate limiting
+        $rateLimited = $this->checkRateLimits((array) $recipients);
+        if ($rateLimited !== null) {
+            return $rateLimited;
+        }
+
+        // 3. Credentials configured check
         if (empty(config('kwtsms.username')) || empty(config('kwtsms.password'))) {
             Log::warning('KwtSMS: send skipped - missing API credentials');
 
             return ['success' => false, 'reason' => 'not_configured'];
         }
 
-        // 3. Balance check
+        // 4. Balance check
         $balance = $this->balanceService->getCached();
         if ($balance !== null && $balance <= 0) {
             Log::warning('KwtSMS: send blocked - balance is zero');
@@ -86,7 +94,7 @@ class SmsSender
             return ['success' => false, 'reason' => 'no_balance'];
         }
 
-        // 4. Coverage filter
+        // 5. Coverage filter
         $coverage = KwtSmsSetting::get('coverage', []);
         $recipientList = (array) $recipients;
 
@@ -110,7 +118,7 @@ class SmsSender
             return ['success' => false, 'reason' => 'no_valid_recipients'];
         }
 
-        // 5. Send via official library (handles normalization, cleaning, batching internally)
+        // 6. Send via official library (handles normalization, cleaning, batching internally)
         $effectiveSender = $sender ?? config('kwtsms.sender', 'KWT-SMS');
         $response = $this->client->send($recipientList, $message, $effectiveSender);
 
@@ -174,6 +182,53 @@ class SmsSender
             'reason' => $response['code'] ?? 'api_error',
             'error_description' => $response['description'] ?? '',
         ];
+    }
+
+    /**
+     * Check per-IP and per-phone rate limits before sending.
+     *
+     * Per-IP: applies in HTTP context only (skipped in CLI/queues).
+     * Per-phone: applies to single-recipient sends only (OTP/password reset).
+     *   Bulk sends to many different phones (order confirmations) are not per-phone limited.
+     *
+     * @param  string[]  $recipients
+     * @return array{success: bool, reason: string}|null Non-null means blocked.
+     */
+    private function checkRateLimits(array $recipients): ?array
+    {
+        // Per-IP limit - HTTP context only
+        if (! app()->runningInConsole()) {
+            $ip = request()->ip();
+            $ipKey = 'kwtsms:ip:'.$ip;
+            $ipLimit = (int) config('kwtsms.rate_limit.per_ip_per_hour', 10);
+
+            if (RateLimiter::tooManyAttempts($ipKey, $ipLimit)) {
+                Log::warning('KwtSMS: send blocked - IP rate limit exceeded', ['ip' => $ip]);
+
+                return ['success' => false, 'reason' => 'rate_limited'];
+            }
+
+            RateLimiter::hit($ipKey, 3600);
+        }
+
+        // Per-phone limit - single recipient only
+        if (count($recipients) === 1) {
+            $phone = $this->normalizer->normalize((string) $recipients[0]);
+            $phoneKey = 'kwtsms:phone:'.$phone;
+            $phoneLimit = (int) config('kwtsms.rate_limit.per_phone_per_hour', 5);
+
+            if (RateLimiter::tooManyAttempts($phoneKey, $phoneLimit)) {
+                Log::warning('KwtSMS: send blocked - per-phone rate limit exceeded', [
+                    'phone_suffix' => substr($phone, -4),
+                ]);
+
+                return ['success' => false, 'reason' => 'rate_limited'];
+            }
+
+            RateLimiter::hit($phoneKey, 3600);
+        }
+
+        return null;
     }
 
     /**
