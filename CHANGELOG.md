@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-03-13
+
+### Fixed
+
+- **PhoneNormalizer:** `normalize()` now strips the trunk prefix `0` from the local portion when a country code is recognized (e.g. `9660559...` becomes `966559...`). Covers Saudi Arabia and any other country where users supply international format with a local trunk zero.
+
 ## [1.0.7] - 2026-03-13
 
 ### Added

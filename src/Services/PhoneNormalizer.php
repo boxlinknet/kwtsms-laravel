@@ -155,17 +155,34 @@ class PhoneNormalizer
      * Normalize a phone number to kwtSMS-accepted format (digits only, international format).
      *
      * Converts Arabic-Indic and Extended Arabic-Indic digits to Latin,
-     * strips all non-digit characters, and removes leading zeros.
+     * strips all non-digit characters, removes leading zeros, and strips
+     * the trunk prefix 0 from the local portion when a country code is
+     * recognized (e.g. 9660559... -> 966559...).
      *
      * Examples:
      *   normalize('+96598765432')   -> '96598765432'
      *   normalize('0096598765432')  -> '96598765432'
      *   normalize('965 9876 5432')  -> '96598765432'
      *   normalize('٩٦٥٩٨٧٦٥٤٣٢')   -> '96598765432'
+     *   normalize('9660559123456')  -> '966559123456'  (SA trunk 0 stripped)
      */
     public function normalize(string $phone): string
     {
-        return PhoneUtils::normalize_phone($phone);
+        $normalized = PhoneUtils::normalize_phone($phone);
+
+        // Strip trunk prefix 0 from the local portion when a country code is
+        // recognized. Many countries use a local trunk 0 (e.g. Saudi 0559... = 559...).
+        $cc = $this->findCountryCode($normalized);
+
+        if ($cc !== null) {
+            $local = substr($normalized, strlen($cc));
+
+            if (str_starts_with($local, '0')) {
+                $normalized = $cc.substr($local, 1);
+            }
+        }
+
+        return $normalized;
     }
 
     /**
