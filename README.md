@@ -282,12 +282,6 @@ See the [kwtsms-js repository](https://github.com/boxlinknet/kwtsms-js) for full
 | FAQ | https://www.kwtsms.com/faq_all.php |
 | Integrations | https://www.kwtsms.com/integrations.html |
 | Support center | https://www.kwtsms.com/support.html |
-| WhatsApp support | +965.9922-0322 |
-| Security vulnerabilities | support@kwtsms.com (see [SECURITY.md](SECURITY.md)) |
-
-## Security
-
-Never commit API credentials. Store them in `.env` only. Report security vulnerabilities to **support@kwtsms.com**. See [SECURITY.md](SECURITY.md) for details.
 
 ## License
 
