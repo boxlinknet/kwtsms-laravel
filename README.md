@@ -245,33 +245,6 @@ When `KWTSMS_TEST_MODE=true`:
 
 Always use test mode during development. Set `KWTSMS_TEST_MODE=false` only in production.
 
-## kwtSMS SDKs and Integrations
-
-The kwtSMS ecosystem has official clients for multiple platforms:
-
-| Platform | Package | Install |
-|----------|---------|---------|
-| **Laravel** (this package) | [kwtsms/laravel-kwtsms](https://packagist.org/packages/kwtsms/laravel-kwtsms) | `composer require kwtsms/laravel-kwtsms` |
-| **PHP** (standalone) | [kwtsms/kwtsms](https://packagist.org/packages/kwtsms/kwtsms) | `composer require kwtsms/kwtsms` |
-| **JavaScript / TypeScript** | [kwtsms](https://www.npmjs.com/package/kwtsms) | `npm install kwtsms` |
-
-### JavaScript / TypeScript Client
-
-The [kwtsms JS client](https://github.com/boxlinknet/kwtsms-js) is a zero-dependency TypeScript package for Node.js, Deno, and Bun. It supports the full kwtSMS API: send, balance, sender IDs, coverage, number validation, and message status.
-
-```typescript
-import { KwtSMS } from 'kwtsms';
-
-const sms = KwtSMS.fromEnv(); // reads KWTSMS_USERNAME, KWTSMS_PASSWORD, KWTSMS_SENDER_ID from .env
-
-const result = await sms.send('96598765432', 'Your OTP for MyApp is: 123456');
-if (result.result === 'OK') {
-    console.log(`Sent! Balance after: ${result['balance-after']}`);
-}
-```
-
-See the [kwtsms-js repository](https://github.com/boxlinknet/kwtsms-js) for full documentation and examples.
-
 ## Help and Support
 
 - **[kwtSMS FAQ](https://www.kwtsms.com/faq/)**: Answers to common questions about credits, sender IDs, OTP, and delivery
