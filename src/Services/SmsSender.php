@@ -200,7 +200,7 @@ class SmsSender
         if (! app()->runningInConsole()) {
             $ip = request()->ip();
             $ipKey = 'kwtsms:ip:'.$ip;
-            $ipLimit = (int) config('kwtsms.rate_limit.per_ip_per_hour', 10);
+            $ipLimit = (int) KwtSmsSetting::get('rate_limit_per_ip', config('kwtsms.rate_limit.per_ip_per_hour', 10));
 
             if (RateLimiter::tooManyAttempts($ipKey, $ipLimit)) {
                 Log::warning('KwtSMS: send blocked - IP rate limit exceeded', ['ip' => $ip]);
@@ -215,7 +215,7 @@ class SmsSender
         if (count($recipients) === 1) {
             $phone = $this->normalizer->normalize((string) $recipients[0]);
             $phoneKey = 'kwtsms:phone:'.$phone;
-            $phoneLimit = (int) config('kwtsms.rate_limit.per_phone_per_hour', 5);
+            $phoneLimit = (int) KwtSmsSetting::get('rate_limit_per_phone', config('kwtsms.rate_limit.per_phone_per_hour', 5));
 
             if (RateLimiter::tooManyAttempts($phoneKey, $phoneLimit)) {
                 Log::warning('KwtSMS: send blocked - per-phone rate limit exceeded', [

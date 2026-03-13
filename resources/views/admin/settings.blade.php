@@ -147,5 +147,52 @@
 
         <button type="submit" class="kwt-btn kwt-btn-primary">{{ __('kwtsms::kwtsms.save') }}</button>
     </div>
+
+    <div class="kwt-card">
+        <div class="kwt-card-title">Rate Limiting</div>
+        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">
+            Limits apply per hour. Per-phone applies to single-recipient sends (OTP, password reset). Per-IP applies to all sends from a web request.
+        </p>
+
+        <div class="kwt-form-group">
+            <label class="kwt-label" for="rate_limit_per_phone">Max SMS per phone number per hour</label>
+            <input
+                type="number"
+                id="rate_limit_per_phone"
+                name="rate_limit_per_phone"
+                class="kwt-input"
+                style="max-width:120px;"
+                value="{{ old('rate_limit_per_phone', $rateLimitPerPhone) }}"
+                min="1"
+                max="100"
+                step="1"
+            >
+            <div class="kwt-help-text">Blocks repeated OTP requests to the same number. Default: 5.</div>
+            @error('rate_limit_per_phone')
+                <div class="kwt-error-text">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <div class="kwt-form-group">
+            <label class="kwt-label" for="rate_limit_per_ip">Max SMS per IP address per hour</label>
+            <input
+                type="number"
+                id="rate_limit_per_ip"
+                name="rate_limit_per_ip"
+                class="kwt-input"
+                style="max-width:120px;"
+                value="{{ old('rate_limit_per_ip', $rateLimitPerIp) }}"
+                min="1"
+                max="500"
+                step="1"
+            >
+            <div class="kwt-help-text">Blocks a single IP from triggering mass sends. Default: 10.</div>
+            @error('rate_limit_per_ip')
+                <div class="kwt-error-text">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <button type="submit" class="kwt-btn kwt-btn-primary">{{ __('kwtsms::kwtsms.save') }}</button>
+    </div>
 </form>
 @endsection
