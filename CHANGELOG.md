@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-03-13
+
+### Added
+
+- **PhoneNormalizer:** Country-specific phone format validation ported from the kwtSMS Shopify integration. Added `PHONE_RULES` table (81 countries), `findCountryCode()`, and `validatePhoneFormat()`. `verify()` now rejects landlines and wrong-length numbers for all known country codes. Unknown country codes continue to pass with generic E.164 validation (7-15 digits).
+
 ## [1.0.6] - 2026-03-13
 
 ### Fixed
