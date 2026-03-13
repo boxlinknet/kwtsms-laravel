@@ -5,9 +5,15 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/kwtsms/laravel-kwtsms.svg?style=flat-square)](https://packagist.org/packages/kwtsms/laravel-kwtsms)
 [![Code Style](https://img.shields.io/github/actions/workflow/status/boxlinknet/kwtsms-laravel/pint.yml?branch=main&label=code+style&style=flat-square)](https://github.com/boxlinknet/kwtsms-laravel/actions/workflows/pint.yml)
 [![PHP](https://img.shields.io/github/actions/workflow/status/boxlinknet/kwtsms-laravel/php.yml?branch=main&label=php+8.1–8.3&style=flat-square)](https://github.com/boxlinknet/kwtsms-laravel/actions/workflows/php.yml)
-[![License](https://img.shields.io/packagist/l/kwtsms/laravel-kwtsms.svg?style=flat-square)](https://packagist.org/packages/kwtsms/laravel-kwtsms)
+[![License](https://img.shields.io/github/license/boxlinknet/kwtsms-laravel?style=flat-square)](LICENSE)
 
 A Laravel notification channel package for the [kwtSMS](https://www.kwtsms.com) SMS gateway (Kuwait). Send SMS messages through kwtSMS in any Laravel 10/11/12 application.
+
+## About kwtSMS
+
+[kwtSMS](https://www.kwtsms.com) is a Kuwait-based SMS gateway trusted by businesses to deliver messages across Kuwait (Zain, Ooredoo, STC, Virgin) and internationally. It offers private Sender IDs, free API testing, non-expiring credits, and competitive flat-rate pricing. Open a free account in under one minute at [kwtsms.com](https://www.kwtsms.com/signup/) — no paperwork or payment required.
+
+---
 
 ## Features
 
@@ -239,16 +245,50 @@ When `KWTSMS_TEST_MODE=true`:
 
 Always use test mode during development. Set `KWTSMS_TEST_MODE=false` only in production.
 
+## kwtSMS SDKs and Integrations
+
+The kwtSMS ecosystem has official clients for multiple platforms:
+
+| Platform | Package | Install |
+|----------|---------|---------|
+| **Laravel** (this package) | [kwtsms/laravel-kwtsms](https://packagist.org/packages/kwtsms/laravel-kwtsms) | `composer require kwtsms/laravel-kwtsms` |
+| **PHP** (standalone) | [kwtsms/kwtsms](https://packagist.org/packages/kwtsms/kwtsms) | `composer require kwtsms/kwtsms` |
+| **JavaScript / TypeScript** | [kwtsms](https://www.npmjs.com/package/kwtsms) | `npm install kwtsms` |
+
+### JavaScript / TypeScript Client
+
+The [kwtsms JS client](https://github.com/boxlinknet/kwtsms-js) is a zero-dependency TypeScript package for Node.js, Deno, and Bun. It supports the full kwtSMS API: send, balance, sender IDs, coverage, number validation, and message status.
+
+```typescript
+import { KwtSMS } from 'kwtsms';
+
+const sms = KwtSMS.fromEnv(); // reads KWTSMS_USERNAME, KWTSMS_PASSWORD, KWTSMS_SENDER_ID from .env
+
+const result = await sms.send('96598765432', 'Your OTP for MyApp is: 123456');
+if (result.result === 'OK') {
+    console.log(`Sent! Balance after: ${result['balance-after']}`);
+}
+```
+
+See the [kwtsms-js repository](https://github.com/boxlinknet/kwtsms-js) for full documentation and examples.
+
+## Help and Support
+
+| Resource | Link |
+|----------|------|
+| kwtSMS website | https://www.kwtsms.com |
+| Sign up (free) | https://www.kwtsms.com/signup/ |
+| API documentation | https://www.kwtsms.com/doc/KwtSMS.com_API_Documentation_v41.pdf |
+| FAQ | https://www.kwtsms.com/faq_all.php |
+| Integrations | https://www.kwtsms.com/integrations.html |
+| Support center | https://www.kwtsms.com/support.html |
+| WhatsApp support | +965.9922-0322 |
+| Security vulnerabilities | support@kwtsms.com (see [SECURITY.md](SECURITY.md)) |
+
 ## Security
 
-Report security vulnerabilities to **support@kwtsms.com**. See [SECURITY.md](SECURITY.md) for details.
-
-Never commit API credentials. Store them in `.env` only.
+Never commit API credentials. Store them in `.env` only. Report security vulnerabilities to **support@kwtsms.com**. See [SECURITY.md](SECURITY.md) for details.
 
 ## License
 
 The MIT License (MIT). See [LICENSE](LICENSE) for details.
-
-## About kwtSMS
-
-[kwtSMS](https://www.kwtsms.com) is a Kuwait-based SMS gateway providing A2P messaging for Kuwait (Zain, Ooredoo, STC, Virgin) and international destinations. WhatsApp support: +965.9922-0322.
