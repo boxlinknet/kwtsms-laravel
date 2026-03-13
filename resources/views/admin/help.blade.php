@@ -46,12 +46,10 @@ $sender->send('96500000000', 'Hello from kwtSMS!');</pre>
     <p style="font-size:13px;color:#6B7280;margin-bottom:12px;">
         Use <code>{variable_name}</code> syntax in template bodies. Pass data when sending:
     </p>
-    <pre class="kwt-code">// Template body: "Dear {name}, your order {order_id} is confirmed."
+    <pre class="kwt-code">// Template body: "Dear @{{name}}, your order @{{order_id}} is confirmed."
+// Rendered with data: ['name' => 'Ahmed', 'order_id' => '#1234']
 
-$sender->sendForEvent('order_placed', '96500000000', [
-    'name' => 'Ahmed',
-    'order_id' => '#1234',
-]);</pre>
+$sender->send('96500000000', 'Dear Ahmed, your order #1234 is confirmed.');</pre>
 </div>
 
 <div class="kwt-card">

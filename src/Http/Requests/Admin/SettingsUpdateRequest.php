@@ -14,7 +14,7 @@ class SettingsUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'admin_phone' => ['nullable', 'string', 'max:30'],
+            'admin_phone' => ['nullable', 'digits_between:7,15'],
             'low_balance_threshold' => ['nullable', 'numeric', 'min:0'],
             'rate_limit_per_phone' => ['nullable', 'integer', 'min:1', 'max:100'],
             'rate_limit_per_ip' => ['nullable', 'integer', 'min:1', 'max:500'],

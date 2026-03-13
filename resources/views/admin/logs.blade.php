@@ -12,6 +12,7 @@
         <form method="POST" action="{{ route('kwtsms.logs.clear') }}" onsubmit="return confirmAction('Clear all logs? This cannot be undone.', this)">
             @csrf
             @method('DELETE')
+            <input type="hidden" name="confirm" value="yes">
             <button type="submit" class="kwt-btn kwt-btn-sm kwt-btn-danger">
                 {{ __('kwtsms::kwtsms.clear_logs') }}
             </button>

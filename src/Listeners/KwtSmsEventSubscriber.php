@@ -51,7 +51,7 @@ class KwtSmsEventSubscriber
             return;
         }
 
-        $phone = (string) KwtSmsSetting::get('alert_phone', '');
+        $phone = (string) KwtSmsSetting::get('admin_phone', '');
 
         if ($phone === '') {
             return;

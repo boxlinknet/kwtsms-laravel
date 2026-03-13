@@ -187,15 +187,23 @@ class SmsSender
     /**
      * Check per-IP and per-phone rate limits before sending.
      *
+     * Both limits apply to single-recipient sends only (OTP, password reset).
+     * Bulk sends (order notifications, campaigns) are not rate-limited here
+     * because they originate from internal business logic, not user-initiated requests.
+     *
      * Per-IP: applies in HTTP context only (skipped in CLI/queues).
-     * Per-phone: applies to single-recipient sends only (OTP/password reset).
-     *   Bulk sends to many different phones (order confirmations) are not per-phone limited.
+     * Per-phone: applies unconditionally for single-recipient sends.
      *
      * @param  string[]  $recipients
      * @return array{success: bool, reason: string}|null Non-null means blocked.
      */
     private function checkRateLimits(array $recipients): ?array
     {
+        // Both limits apply to single-recipient sends only (OTP, password reset flows)
+        if (count($recipients) !== 1) {
+            return null;
+        }
+
         // Per-IP limit - HTTP context only
         if (! app()->runningInConsole()) {
             $ip = request()->ip();
@@ -211,22 +219,20 @@ class SmsSender
             RateLimiter::hit($ipKey, 3600);
         }
 
-        // Per-phone limit - single recipient only
-        if (count($recipients) === 1) {
-            $phone = $this->normalizer->normalize((string) $recipients[0]);
-            $phoneKey = 'kwtsms:phone:'.$phone;
-            $phoneLimit = (int) KwtSmsSetting::get('rate_limit_per_phone', config('kwtsms.rate_limit.per_phone_per_hour', 5));
+        // Per-phone limit
+        $phone = $this->normalizer->normalize((string) $recipients[0]);
+        $phoneKey = 'kwtsms:phone:'.$phone;
+        $phoneLimit = (int) KwtSmsSetting::get('rate_limit_per_phone', config('kwtsms.rate_limit.per_phone_per_hour', 5));
 
-            if (RateLimiter::tooManyAttempts($phoneKey, $phoneLimit)) {
-                Log::warning('KwtSMS: send blocked - per-phone rate limit exceeded', [
-                    'phone_suffix' => substr($phone, -4),
-                ]);
+        if (RateLimiter::tooManyAttempts($phoneKey, $phoneLimit)) {
+            Log::warning('KwtSMS: send blocked - per-phone rate limit exceeded', [
+                'phone_suffix' => substr($phone, -4),
+            ]);
 
-                return ['success' => false, 'reason' => 'rate_limited'];
-            }
-
-            RateLimiter::hit($phoneKey, 3600);
+            return ['success' => false, 'reason' => 'rate_limited'];
         }
+
+        RateLimiter::hit($phoneKey, 3600);
 
         return null;
     }

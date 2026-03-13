@@ -13,7 +13,7 @@
         <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">
             These alerts are sent to the admin phone number configured in Settings.
             @if(!empty($adminPhone))
-                Currently sending to: <strong>{{ $adminPhone }}</strong>
+                Currently sending to: <strong>****{{ substr($adminPhone, -4) }}</strong>
             @else
                 <strong style="color:#EF4444;">No admin phone number configured.</strong>
                 <a href="{{ route('kwtsms.settings') }}">Configure in Settings</a>

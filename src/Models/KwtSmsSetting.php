@@ -4,6 +4,7 @@ namespace KwtSMS\Laravel\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @property int $id
@@ -30,12 +31,21 @@ class KwtSmsSetting extends Model
 
     /**
      * Get a setting value by key.
+     *
+     * Returns $default if the key does not exist or its value is null.
+     * If the key is encrypted, logs a warning and returns $default — use getDecrypted() instead.
      */
     public static function get(string $key, mixed $default = null): mixed
     {
         $setting = static::query()->where('key', $key)->first();
 
         if ($setting === null) {
+            return $default;
+        }
+
+        if ($setting->is_encrypted) {
+            Log::warning("KwtSMS: KwtSmsSetting::get() called on encrypted key '{$key}'. Use getDecrypted() instead.");
+
             return $default;
         }
 
@@ -52,10 +62,19 @@ class KwtSmsSetting extends Model
 
     /**
      * Set a setting value by key.
+     *
+     * Always stores as JSON so get() round-trips correctly for all types.
+     * Logs a warning if the key was previously stored as encrypted.
      */
     public static function set(string $key, mixed $value): void
     {
-        $encoded = is_string($value) ? $value : json_encode($value);
+        $existing = static::query()->where('key', $key)->first();
+
+        if ($existing?->is_encrypted) {
+            Log::warning("KwtSMS: KwtSmsSetting::set() is overwriting encrypted key '{$key}' with a plain value.");
+        }
+
+        $encoded = json_encode($value);
 
         static::query()->updateOrCreate(
             ['key' => $key],

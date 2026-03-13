@@ -9,6 +9,9 @@ use KwtSMS\Laravel\Http\Controllers\Admin\LogsController;
 use KwtSMS\Laravel\Http\Controllers\Admin\SettingsController;
 use KwtSMS\Laravel\Http\Controllers\Admin\TemplatesController;
 
+// IMPORTANT: admin_middleware MUST include an authentication guard (e.g. 'auth').
+// Removing 'auth' from kwtsms.admin_middleware in config/kwtsms.php would expose
+// all admin routes (logs, settings, templates, credentials status) to unauthenticated users.
 Route::prefix(config('kwtsms.admin_route_prefix', 'kwtsms'))
     ->middleware(config('kwtsms.admin_middleware', ['web', 'auth']))
     ->name('kwtsms.')

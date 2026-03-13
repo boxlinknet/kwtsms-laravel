@@ -15,7 +15,6 @@
         <span class="kwt-detail-value">
             @if(!empty(config('kwtsms.username')))
                 <span class="kwt-badge kwt-badge-green">Set</span>
-                <code style="margin-left:8px;font-size:12px;">{{ strlen(config('kwtsms.username', '')) > 3 ? substr(config('kwtsms.username', ''), 0, 3) . str_repeat('*', strlen(config('kwtsms.username', '')) - 3) : str_repeat('*', strlen(config('kwtsms.username', ''))) }}</code>
             @else
                 <span class="kwt-badge kwt-badge-red">Not Set</span>
             @endif

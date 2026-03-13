@@ -76,7 +76,7 @@
         <div class="kwt-card-title">Custom Events</div>
         <p style="font-size:13px;color:#6B7280;margin-bottom:12px;">
             Custom events can be triggered from your code using
-            <code>SmsSender::sendForEvent('your_event', $phone, $data)</code>.
+            <code>app(SmsSender::class)->send($phone, $message, null, ['event_type' => 'your_event'])</code>.
         </p>
         @php
             $customEvents = [

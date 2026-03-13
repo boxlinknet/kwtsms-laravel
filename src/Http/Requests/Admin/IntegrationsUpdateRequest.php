@@ -15,6 +15,7 @@ class IntegrationsUpdateRequest extends FormRequest
     {
         return [
             'integrations' => ['nullable', 'array'],
+            'integrations.*' => ['boolean'],
         ];
     }
 }

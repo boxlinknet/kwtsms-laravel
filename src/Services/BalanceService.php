@@ -2,6 +2,7 @@
 
 namespace KwtSMS\Laravel\Services;
 
+use Illuminate\Support\Facades\Http;
 use KwtSMS\Laravel\Models\KwtSmsSetting;
 
 /**
@@ -79,36 +80,21 @@ class BalanceService
     private function fetchBalanceFromApi(): array
     {
         $url = rtrim((string) config('kwtsms.api_base_url', 'https://www.kwtsms.com/API/'), '/').'/balance/';
-        $payload = json_encode([
-            'username' => config('kwtsms.username', ''),
-            'password' => config('kwtsms.password', ''),
-        ]);
 
-        if ($payload === false) {
-            return ['result' => 'ERROR', 'description' => 'Failed to encode request'];
+        try {
+            $response = Http::timeout((int) config('kwtsms.timeout', 30))
+                ->connectTimeout(5)
+                ->acceptJson()
+                ->post($url, [
+                    'username' => config('kwtsms.username', ''),
+                    'password' => config('kwtsms.password', ''),
+                ]);
+
+            $decoded = $response->json();
+
+            return is_array($decoded) ? $decoded : ['result' => 'ERROR', 'description' => 'Invalid JSON from balance API'];
+        } catch (\Throwable $e) {
+            return ['result' => 'ERROR', 'description' => $e->getMessage()];
         }
-
-        $ch = curl_init($url);
-        if ($ch === false) {
-            return ['result' => 'ERROR', 'description' => 'Failed to initialize HTTP request'];
-        }
-
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, (int) config('kwtsms.timeout', 30));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Accept: application/json']);
-
-        $body = curl_exec($ch);
-        curl_close($ch);
-
-        if ($body === false || $body === '') {
-            return ['result' => 'ERROR', 'description' => 'Empty response from balance API'];
-        }
-
-        $decoded = json_decode((string) $body, true);
-
-        return is_array($decoded) ? $decoded : ['result' => 'ERROR', 'description' => 'Invalid JSON from balance API'];
     }
 }
