@@ -13,7 +13,9 @@ use Illuminate\Support\Carbon;
  * @property string $message
  * @property string $status
  * @property string|null $event_type
+ * @property string $recipient_type
  * @property bool $is_test
+ * @property int $pages
  * @property int $numbers_sent
  * @property float $points_charged
  * @property float|null $balance_after
@@ -34,7 +36,9 @@ class KwtSmsLog extends Model
         'message',
         'status',
         'event_type',
+        'recipient_type',
         'is_test',
+        'pages',
         'numbers_sent',
         'points_charged',
         'balance_after',
@@ -51,6 +55,7 @@ class KwtSmsLog extends Model
             'api_request' => 'array',
             'api_response' => 'array',
             'is_test' => 'boolean',
+            'pages' => 'integer',
             'points_charged' => 'float',
             'balance_after' => 'float',
             'sent_at' => 'datetime',
