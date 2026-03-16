@@ -6,27 +6,42 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use KwtSMS\KwtSMS;
+use KwtSMS\Laravel\Events\SmsFailed;
+use KwtSMS\Laravel\Events\SmsSent;
 use KwtSMS\Laravel\Models\KwtSmsLog;
 use KwtSMS\Laravel\Models\KwtSmsSetting;
 
 /**
  * Core SMS sending service.
  *
- * Thin Laravel wrapper around the kwtsms/kwtsms library.
- * Adds pre-send checks, coverage filtering, DB logging, and balance caching.
+ * One public method handles everything: single, multiple, and bulk (>200).
  *
- * The official library handles: phone normalization, message cleaning,
- * batching (>200 numbers), and ERR013 queue-full retry with backoff.
+ * Laravel concerns (this class):
+ *   - Gateway on/off, test mode, credentials
+ *   - Rate limiting (single recipient only)
+ *   - Coverage filtering, SMS page estimation, balance check
+ *   - DB logging with recipient_type and pages
+ *   - Event dispatching (SmsSent, SmsFailed)
  *
- * Pre-send checks (in order):
- *   1. Global enabled switch
- *   2. Credentials configured
- *   3. Cached balance > 0
- *   4. Coverage filter (numbers not in coverage are skipped)
+ * Vendor library (kwtsms/kwtsms) handles:
+ *   - Phone dedup, message cleaning, >200 batching, ERR013 retry
  */
 class SmsSender
 {
     private KwtSMS $client;
+
+    private const MAX_SMS_PAGES = 7;
+
+    /**
+     * GSM-7 basic character set (single byte per char).
+     */
+    private const GSM7_BASIC = "@£\$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ ÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        .'ÄÖÑÜabcdefghijklmnopqrstuvwxyz§äöñüà';
+
+    /**
+     * GSM-7 extended characters (2 bytes per char: escape + char).
+     */
+    private const GSM7_EXTENDED = '{}[]\\~^|€';
 
     public function __construct(
         private readonly PhoneNormalizer $normalizer,
@@ -44,176 +59,294 @@ class SmsSender
     /**
      * Send an SMS message to one or more recipients.
      *
-     * @param  string|string[]  $recipients  Phone number(s). Will be normalized internally.
-     * @param  string  $message  Message text. Will be cleaned internally by the library.
+     * Handles single numbers, multiple numbers, and bulk (>200) transparently.
+     * Respects global enabled/test mode toggles, rate limits, coverage, balance.
+     *
+     * @param  string|string[]  $recipients  Phone number(s). Normalized internally.
+     * @param  string  $message  Message text. Cleaned internally by vendor library.
      * @param  string|null  $sender  Override sender ID. Defaults to config kwtsms.sender.
-     * @param  array<string, mixed>  $options  Optional metadata. Keys: 'event_type' (string).
-     * @return array{success: bool, reason?: string, message_id?: string, numbers_sent?: int, points_charged?: float, balance_after?: float}
-     *                                                                                                                                       reason values on failure: 'disabled', 'rate_limited', 'not_configured', 'no_balance', 'no_valid_recipients', 'api_error', or an ERR code
+     * @param  array{event_type?: string, recipient_type?: string}  $options
+     * @return array{success: bool, reason?: string, error_description?: string, message_id?: string|null, numbers_sent?: int, points_charged?: float, balance_after?: float|null, pages?: int, is_test?: bool, recipient_type?: string}
      */
     public function send(string|array $recipients, string $message, ?string $sender = null, array $options = []): array
     {
-        // 1. Global enabled check
+        $eventType = $options['event_type'] ?? 'custom';
+        $recipientType = $options['recipient_type'] ?? 'customer';
+        $effectiveSender = $sender ?? config('kwtsms.sender', 'KWT-SMS');
+        $isTest = (bool) config('kwtsms.test_mode', false);
+
+        // 1. Gateway check
         if (! config('kwtsms.enabled', true)) {
             if (config('kwtsms.debug_logging', false)) {
-                Log::debug('KwtSMS: send skipped - SMS disabled by global switch');
+                Log::debug('KwtSMS: send skipped, gateway disabled');
             }
 
-            return ['success' => false, 'reason' => 'disabled'];
+            return $this->fail('disabled', 'SMS gateway is disabled');
         }
 
-        // 2. Rate limiting
-        $rateLimited = $this->checkRateLimits((array) $recipients);
+        // 2. Rate limiting (single recipient only, before any I/O)
+        $recipientArray = (array) $recipients;
+        $rateLimited = $this->checkRateLimits($recipientArray);
         if ($rateLimited !== null) {
             return $rateLimited;
         }
 
-        // 3. Credentials configured check
+        // 3. Credentials check
         if (empty(config('kwtsms.username')) || empty(config('kwtsms.password'))) {
-            Log::warning('KwtSMS: send skipped - missing API credentials');
+            Log::warning('KwtSMS: send skipped, missing API credentials');
 
-            return ['success' => false, 'reason' => 'not_configured'];
+            return $this->fail('not_configured', 'API credentials not configured. Set KWTSMS_USERNAME and KWTSMS_PASSWORD in your .env file');
         }
 
-        // 4. Balance check
-        $balance = $this->balanceService->getCached();
-        if ($balance !== null && $balance <= 0) {
-            Log::warning('KwtSMS: send blocked - balance is zero');
+        // 4. Normalize, validate, and deduplicate recipients
+        $coverage = KwtSmsSetting::get('coverage', []);
+        $coveragePrefixes = is_array($coverage) ? $coverage : [];
+
+        if (! empty($coveragePrefixes)) {
+            $normalized = $this->normalizer->normalizeMany($recipientArray, $coveragePrefixes);
+            $recipientList = array_unique($normalized['valid']);
+        } else {
+            $normalized = $this->normalizer->normalizeMany($recipientArray);
+            $recipientList = array_unique($normalized['valid']);
+        }
+
+        if (empty($recipientList)) {
+            $reason = ! empty($coveragePrefixes) && ! empty($normalized['invalid'])
+                ? 'no_coverage'
+                : 'no_valid_recipients';
+            $description = $reason === 'no_coverage'
+                ? 'None of the provided numbers are in covered regions'
+                : 'No valid phone numbers provided';
+
+            return $this->fail($reason, $description);
+        }
+
+        // Re-index after array_unique
+        $recipientList = array_values($recipientList);
+
+        // 5. Calculate SMS pages and check max
+        $pages = $this->calculateSmsPages($message);
+
+        if ($pages > self::MAX_SMS_PAGES) {
+            $isUcs2 = ! $this->isGsm7($message);
+            $maxChars = $isUcs2
+                ? 67 * self::MAX_SMS_PAGES
+                : 153 * self::MAX_SMS_PAGES;
+
+            return $this->fail(
+                'message_too_long',
+                "Message too long: {$pages} SMS pages (max ".self::MAX_SMS_PAGES."). Shorten to {$maxChars} characters"
+            );
+        }
+
+        // 6. Balance check (cached, with stale sync)
+        $balance = $this->balanceService->getCachedOrSync();
+        $estimatedCost = $pages * count($recipientList);
+
+        if ($balance !== null && $balance < $estimatedCost) {
+            $count = count($recipientList);
             $this->logToDatabase(
-                recipients: (array) $recipients,
+                recipients: $recipientList,
                 message: $message,
-                sender: $sender ?? config('kwtsms.sender', 'KWT-SMS'),
+                sender: $effectiveSender,
                 apiRequest: [],
                 apiResponse: null,
                 status: 'failed',
                 errorCode: 'ERR010',
                 errorMessage: 'Insufficient balance',
-                eventType: $options['event_type'] ?? null,
+                eventType: $eventType,
+                recipientType: $recipientType,
+                pages: $pages,
             );
 
-            return ['success' => false, 'reason' => 'no_balance'];
+            return $this->fail(
+                'insufficient_balance',
+                "Insufficient balance: need ~{$estimatedCost} points ({$pages}p x {$count} recipients), have {$balance}. Recharge at kwtsms.com"
+            );
         }
 
-        // 5. Coverage filter
-        $coverage = KwtSmsSetting::get('coverage', []);
-        $recipientList = (array) $recipients;
-
-        if (! empty($coverage)) {
-            $filtered = $this->normalizer->normalizeMany($recipientList, is_array($coverage) ? $coverage : []);
-            $recipientList = $filtered['valid'];
-
-            if (empty($recipientList)) {
-                if (config('kwtsms.debug_logging', false)) {
-                    Log::debug('KwtSMS: send skipped - no recipients in coverage', [
-                        'skipped' => $filtered['invalid'],
-                    ]);
-                }
-
-                return ['success' => false, 'reason' => 'no_valid_recipients'];
-            }
-        }
-
-        // Guard against empty recipient list (e.g. caller passed an empty array)
-        if (empty($recipientList)) {
-            return ['success' => false, 'reason' => 'no_valid_recipients'];
-        }
-
-        // 6. Send via official library (handles normalization, cleaning, batching internally)
-        $effectiveSender = $sender ?? config('kwtsms.sender', 'KWT-SMS');
+        // 7. Send via vendor library
         $response = $this->client->send($recipientList, $message, $effectiveSender);
 
         // Build sanitized api_request for logging (no credentials)
         $apiRequest = [
-            'mobile' => implode(',', (array) $recipientList),
+            'mobile' => implode(',', $recipientList),
             'message' => $message,
             'sender' => $effectiveSender,
-            'test' => config('kwtsms.test_mode', false) ? 1 : 0,
+            'test' => $isTest ? 1 : 0,
         ];
 
-        $success = isset($response['result']) && $response['result'] === 'OK';
+        $isOk = isset($response['result']) && $response['result'] === 'OK';
         $isPartial = isset($response['result']) && $response['result'] === 'PARTIAL';
 
-        // 6. Update balance cache
+        // 8. Update balance cache from API response
         if (isset($response['balance-after'])) {
             $this->balanceService->updateCache((float) $response['balance-after']);
         }
 
-        // 7. Log to database
+        // 9. Parse send timestamp
         $sentAt = null;
         if (isset($response['unix-timestamp'])) {
-            // API timestamp is GMT+3 (Asia/Kuwait), convert to UTC
             $sentAt = Carbon::createFromTimestamp((int) $response['unix-timestamp'], 'Asia/Kuwait')->utc();
         }
 
+        // Extract message ID(s)
+        $messageId = $response['msg-id']
+            ?? (isset($response['msg-ids']) ? implode(',', $response['msg-ids']) : null);
+        $numbersSent = (int) ($response['numbers'] ?? count($recipientList));
+        $pointsCharged = (float) ($response['points-charged'] ?? 0);
+        $balanceAfter = isset($response['balance-after']) ? (float) $response['balance-after'] : null;
+
+        // 10. Log to database
         $this->logToDatabase(
-            recipients: (array) $recipientList,
+            recipients: $recipientList,
             message: $message,
             sender: $effectiveSender,
             apiRequest: $apiRequest,
             apiResponse: $response,
-            status: $success || $isPartial ? 'sent' : 'failed',
-            errorCode: $success || $isPartial ? null : ($response['code'] ?? null),
-            errorMessage: $success || $isPartial ? null : ($response['description'] ?? null),
-            eventType: $options['event_type'] ?? null,
-            messageId: $response['msg-id'] ?? (isset($response['msg-ids']) ? implode(',', $response['msg-ids']) : null),
-            numbersSent: (int) ($response['numbers'] ?? count($recipientList)),
-            pointsCharged: (float) ($response['points-charged'] ?? 0),
-            balanceAfter: isset($response['balance-after']) ? (float) $response['balance-after'] : null,
+            status: ($isOk || $isPartial) ? 'sent' : 'failed',
+            errorCode: ($isOk || $isPartial) ? null : ($response['code'] ?? null),
+            errorMessage: ($isOk || $isPartial) ? null : ($response['description'] ?? null),
+            eventType: $eventType,
+            recipientType: $recipientType,
+            pages: $pages,
+            messageId: $messageId,
+            numbersSent: $numbersSent,
+            pointsCharged: $pointsCharged,
+            balanceAfter: $balanceAfter,
             sentAt: $sentAt,
         );
 
-        if ($success || $isPartial) {
+        // 11. Dispatch events and return
+        if ($isOk || $isPartial) {
+            SmsSent::dispatch(
+                implode(',', $recipientList),
+                $message,
+                $eventType,
+                $messageId,
+            );
+
             return [
                 'success' => true,
-                'message_id' => $response['msg-id'] ?? null,
-                'numbers_sent' => (int) ($response['numbers'] ?? count($recipientList)),
-                'points_charged' => (float) ($response['points-charged'] ?? 0),
-                'balance_after' => isset($response['balance-after']) ? (float) $response['balance-after'] : null,
+                'message_id' => $messageId,
+                'numbers_sent' => $numbersSent,
+                'points_charged' => $pointsCharged,
+                'balance_after' => $balanceAfter,
+                'pages' => $pages,
+                'is_test' => $isTest,
+                'recipient_type' => $recipientType,
             ];
         }
+
+        SmsFailed::dispatch(
+            implode(',', $recipientList),
+            $message,
+            'api_error',
+            $response['code'] ?? null,
+        );
 
         Log::warning('KwtSMS: send failed', [
             'code' => $response['code'] ?? 'UNKNOWN',
             'description' => $response['description'] ?? '',
         ]);
 
+        return $this->fail(
+            $response['code'] ?? 'api_error',
+            $response['description'] ?? 'Unknown API error',
+        );
+    }
+
+    /**
+     * Build a consistent failure response.
+     *
+     * @return array{success: false, reason: string, error_description: string}
+     */
+    private function fail(string $reason, string $description): array
+    {
         return [
             'success' => false,
-            'reason' => $response['code'] ?? 'api_error',
-            'error_description' => $response['description'] ?? '',
+            'reason' => $reason,
+            'error_description' => $description,
         ];
+    }
+
+    /**
+     * Calculate how many SMS pages a message will use.
+     *
+     * GSM-7: 160 chars single, 153 chars/page multipart. Extended chars count as 2.
+     * UCS-2: 70 chars single, 67 chars/page multipart.
+     */
+    private function calculateSmsPages(string $message): int
+    {
+        if ($this->isGsm7($message)) {
+            $charCount = $this->gsm7Length($message);
+
+            return $charCount <= 160 ? 1 : (int) ceil($charCount / 153);
+        }
+
+        $charCount = mb_strlen($message);
+
+        return $charCount <= 70 ? 1 : (int) ceil($charCount / 67);
+    }
+
+    /**
+     * Check if a message uses only GSM-7 characters (basic + extended).
+     */
+    private function isGsm7(string $message): bool
+    {
+        for ($i = 0; $i < mb_strlen($message); $i++) {
+            $char = mb_substr($message, $i, 1);
+
+            if (str_contains(self::GSM7_BASIC, $char) || str_contains(self::GSM7_EXTENDED, $char)) {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Calculate effective GSM-7 character length (extended chars count as 2).
+     */
+    private function gsm7Length(string $message): int
+    {
+        $length = 0;
+
+        for ($i = 0; $i < mb_strlen($message); $i++) {
+            $char = mb_substr($message, $i, 1);
+            $length += str_contains(self::GSM7_EXTENDED, $char) ? 2 : 1;
+        }
+
+        return $length;
     }
 
     /**
      * Check per-IP and per-phone rate limits before sending.
      *
-     * Both limits apply to single-recipient sends only (OTP, password reset).
-     * Bulk sends (order notifications, campaigns) are not rate-limited here
-     * because they originate from internal business logic, not user-initiated requests.
-     *
-     * Per-IP: applies in HTTP context only (skipped in CLI/queues).
-     * Per-phone: applies unconditionally for single-recipient sends.
+     * Only applies to single-recipient sends (OTP, password reset).
+     * Bulk sends skip rate limiting.
      *
      * @param  string[]  $recipients
-     * @return array{success: bool, reason: string}|null Non-null means blocked.
+     * @return array{success: false, reason: string, error_description: string}|null
      */
     private function checkRateLimits(array $recipients): ?array
     {
-        // Both limits apply to single-recipient sends only (OTP, password reset flows)
         if (count($recipients) !== 1) {
             return null;
         }
 
-        // Per-IP limit - HTTP context only
+        // Per-IP limit (HTTP context only)
         if (! app()->runningInConsole()) {
             $ip = request()->ip();
             $ipKey = 'kwtsms:ip:'.$ip;
             $ipLimit = (int) KwtSmsSetting::get('rate_limit_per_ip', config('kwtsms.rate_limit.per_ip_per_hour', 10));
 
             if (RateLimiter::tooManyAttempts($ipKey, $ipLimit)) {
-                Log::warning('KwtSMS: send blocked - IP rate limit exceeded', ['ip' => $ip]);
+                Log::warning('KwtSMS: send blocked, IP rate limit exceeded', ['ip' => $ip]);
 
-                return ['success' => false, 'reason' => 'rate_limited'];
+                return $this->fail('rate_limited', 'Rate limited: too many SMS from this IP');
             }
 
             RateLimiter::hit($ipKey, 3600);
@@ -225,11 +358,11 @@ class SmsSender
         $phoneLimit = (int) KwtSmsSetting::get('rate_limit_per_phone', config('kwtsms.rate_limit.per_phone_per_hour', 5));
 
         if (RateLimiter::tooManyAttempts($phoneKey, $phoneLimit)) {
-            Log::warning('KwtSMS: send blocked - per-phone rate limit exceeded', [
+            Log::warning('KwtSMS: send blocked, per-phone rate limit exceeded', [
                 'phone_suffix' => substr($phone, -4),
             ]);
 
-            return ['success' => false, 'reason' => 'rate_limited'];
+            return $this->fail('rate_limited', 'Rate limited: too many SMS to this number');
         }
 
         RateLimiter::hit($phoneKey, 3600);
@@ -254,6 +387,8 @@ class SmsSender
         ?string $errorCode,
         ?string $errorMessage,
         ?string $eventType,
+        string $recipientType = 'customer',
+        int $pages = 1,
         ?string $messageId = null,
         int $numbersSent = 0,
         float $pointsCharged = 0.0,
@@ -268,7 +403,9 @@ class SmsSender
                 'message' => $message,
                 'status' => $status,
                 'event_type' => $eventType,
+                'recipient_type' => $recipientType,
                 'is_test' => (bool) config('kwtsms.test_mode', false),
+                'pages' => $pages,
                 'numbers_sent' => $numbersSent,
                 'points_charged' => $pointsCharged,
                 'balance_after' => $balanceAfter,
@@ -279,7 +416,6 @@ class SmsSender
                 'sent_at' => $sentAt,
             ]);
         } catch (\Throwable $e) {
-            // Logging must never crash the main send flow
             Log::error('KwtSMS: failed to write SMS log', ['error' => $e->getMessage()]);
         }
     }
