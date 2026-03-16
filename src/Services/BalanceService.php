@@ -2,7 +2,9 @@
 
 namespace KwtSMS\Laravel\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use KwtSMS\Laravel\Models\KwtSmsSetting;
 
 /**
@@ -45,6 +47,45 @@ class BalanceService
     {
         KwtSmsSetting::set(self::BALANCE_KEY, $balance);
         KwtSmsSetting::set(self::SYNCED_AT_KEY, now()->toIso8601String());
+    }
+
+    /**
+     * Get the timestamp of the last balance sync.
+     */
+    public function getSyncedAt(): ?\DateTimeInterface
+    {
+        $value = KwtSmsSetting::get(self::SYNCED_AT_KEY);
+
+        if ($value === null) {
+            return null;
+        }
+
+        return Carbon::parse($value);
+    }
+
+    /**
+     * Get cached balance, syncing from API first if stale or unknown.
+     *
+     * "Stale" means: never synced, or last sync was more than 24 hours ago.
+     * If sync fails (network error, API down), logs a warning and returns
+     * the cached value anyway (may be null).
+     */
+    public function getCachedOrSync(): ?float
+    {
+        $syncedAt = $this->getSyncedAt();
+        $isStale = $syncedAt === null || $syncedAt->diffInHours(now()) >= 24;
+
+        if ($isStale) {
+            $result = $this->syncFromApi();
+
+            if (isset($result['error'])) {
+                Log::warning('KwtSMS: balance sync failed, using cached value', [
+                    'error' => $result['error'],
+                ]);
+            }
+        }
+
+        return $this->getCached();
     }
 
     /**
