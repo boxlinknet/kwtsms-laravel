@@ -60,7 +60,10 @@ class KwtSmsEventSubscriber
         $message = $this->resolveMessage($eventType, $fallbackMessage);
 
         try {
-            $this->sender->send($phone, $message, null, ['event_type' => $eventType]);
+            $this->sender->send($phone, $message, null, [
+                'event_type' => $eventType,
+                'recipient_type' => 'admin',
+            ]);
         } catch (\Throwable $e) {
             Log::error('KwtSMS: event subscriber failed to send', [
                 'event_type' => $eventType,
