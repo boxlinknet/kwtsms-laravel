@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.12] - 2026-03-16
+
+### Changed
+
+- **SmsSender:** Rewritten with unified send() method. One function handles single, multiple, and bulk sends.
+- **SmsSender:** Added SMS page calculator with GSM-7/UCS-2 encoding detection and cost estimation.
+- **SmsSender:** Balance check now syncs from API if cached value is stale (>24h) or unknown.
+- **SmsSender:** All failure responses now include both machine-readable `reason` and human-readable `error_description`.
+- **SmsSender:** Dispatches SmsSent and SmsFailed events after every send.
+- **BalanceService:** Added getCachedOrSync() with 24-hour stale threshold.
+- **KwtSmsEventSubscriber:** Admin alert sends now tagged with recipient_type 'admin'.
+
+### Added
+
+- `recipient_type` column in kwtsms_logs (customer or admin)
+- `pages` column in kwtsms_logs (SMS page count)
+- `is_test`, `pages`, `recipient_type` fields in send() success response
+
 ## [1.0.11] - 2026-03-15
 
 ### Added
