@@ -91,7 +91,7 @@ class BalanceService
     /**
      * Sync balance from the kwtSMS API and update the cache.
      *
-     * Calls /API/balance/ directly. The kwtsms/kwtsms library balance() method
+     * Calls /API/balance/ directly. The kwtsms/kwtsms-php library balance() method
      * reads the wrong field ('balance' instead of 'available'), so we call
      * the API ourselves to get the correct value.
      *

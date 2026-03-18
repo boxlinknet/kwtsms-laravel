@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **PhoneNormalizer:** Removed duplicated `PHONE_RULES`, `COUNTRY_NAMES`, `findCountryCode`, and `validatePhoneFormat` implementations. All logic now delegates to `KwtSMS\PhoneUtils` v1.3.0, which ships the same rules and methods. The public interface (`normalize`, `findCountryCode`, `validatePhoneFormat`, `verify`, `normalizeMany`) is unchanged.
-- Requires `kwtsms/kwtsms` ^1.3.0 (updated via `composer update kwtsms/kwtsms`).
+- Requires `kwtsms/kwtsms-php` ^1.3.0 (updated via `composer update kwtsms/kwtsms-php`).
 
 ## [1.0.8] - 2026-03-13
 

@@ -23,7 +23,7 @@ use KwtSMS\Laravel\Models\KwtSmsSetting;
  *   - DB logging with recipient_type and pages
  *   - Event dispatching (SmsSent, SmsFailed)
  *
- * Vendor library (kwtsms/kwtsms) handles:
+ * Vendor library (kwtsms/kwtsms-php) handles:
  *   - Phone dedup, message cleaning, >200 batching, ERR013 retry
  */
 class SmsSender
